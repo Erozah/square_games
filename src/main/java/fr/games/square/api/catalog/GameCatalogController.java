@@ -1,9 +1,11 @@
-package fr.games.square.api;
+package fr.games.square.api.catalog;
 
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RestController;
+
 import java.util.Collection;
+import java.util.Locale;
 
 @RestController
 public class GameCatalogController {
@@ -15,7 +17,9 @@ public class GameCatalogController {
     }
 
     @GetMapping("/catalog")
-    public Collection<String> getGameCatalog() {
-        return gameCatalog.get();
+    public Collection<GameCatalogItem> getGameCatalog(
+            @RequestHeader(value = "Accept-Language", required = false) Locale locale
+    ) {
+        return gameCatalog.get(locale != null ? locale : Locale.getDefault());
     }
 }

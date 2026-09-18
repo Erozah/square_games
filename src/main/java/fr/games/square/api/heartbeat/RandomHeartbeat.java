@@ -1,4 +1,4 @@
-package fr.games.square.api;
+package fr.games.square.api.heartbeat;
 
 import org.springframework.stereotype.Service;
 
