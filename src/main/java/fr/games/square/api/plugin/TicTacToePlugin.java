@@ -52,4 +52,9 @@ public class TicTacToePlugin implements GamePlugin {
         String normalized = gameType.trim().toLowerCase();
         return normalized.equals("tictactoe") || normalized.equals("tic-tac-toe") || normalized.equals("morpion");
     }
+
+    @Override
+    public GameFactory getFactory() {
+        return factory;
+    }
 }

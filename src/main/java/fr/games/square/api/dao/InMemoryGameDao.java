@@ -1,6 +1,7 @@
 package fr.games.square.api.dao;
 
 import fr.le_campus_numerique.square_games.engine.Game;
+import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Component;
 
 import java.util.HashMap;
@@ -9,6 +10,7 @@ import java.util.Optional;
 import java.util.stream.Stream;
 
 @Component
+@Profile("inmemory")
 public class InMemoryGameDao implements GameDao {
 
     private final Map<String, Game> games = new HashMap<>();

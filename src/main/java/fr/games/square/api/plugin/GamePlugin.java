@@ -15,4 +15,6 @@ public interface GamePlugin {
     default boolean supports(String gameType) {
         return gameType != null && getId().equalsIgnoreCase(gameType.trim());
     }
+
+    fr.le_campus_numerique.square_games.engine.GameFactory getFactory();
 }

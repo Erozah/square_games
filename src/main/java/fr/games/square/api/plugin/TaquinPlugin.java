@@ -52,4 +52,9 @@ public class TaquinPlugin implements GamePlugin {
         String normalized = gameType.trim().toLowerCase();
         return normalized.equals("15 puzzle") || normalized.equals("taquin") || normalized.equals("15puzzle");
     }
+
+    @Override
+    public GameFactory getFactory() {
+        return factory;
+    }
 }

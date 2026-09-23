@@ -52,4 +52,9 @@ public class ConnectFourPlugin implements GamePlugin {
         String normalized = gameType.trim().toLowerCase();
         return normalized.equals("connect4") || normalized.equals("connectfour") || normalized.equals("puissance4") || normalized.equals("connect-four");
     }
+
+    @Override
+    public GameFactory getFactory() {
+        return factory;
+    }
 }
