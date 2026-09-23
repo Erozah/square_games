@@ -1,6 +1,6 @@
 package fr.games.square.api.dao;
 
-import fr.games.square.api.dao.entity.GameEntity;
+import fr.games.square.api.entity.GameEntity;
 import fr.le_campus_numerique.square_games.engine.Game;
 import org.springframework.context.annotation.Primary;
 import org.springframework.context.annotation.Profile;

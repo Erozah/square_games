@@ -1,7 +1,7 @@
 package fr.games.square.api.dao;
 
-import fr.games.square.api.dao.entity.GameEntity;
-import fr.games.square.api.dao.entity.GameTokenEntity;
+import fr.games.square.api.entity.GameEntity;
+import fr.games.square.api.entity.GameTokenEntity;
 import fr.games.square.api.plugin.GamePlugin;
 import fr.le_campus_numerique.square_games.engine.Game;
 import fr.le_campus_numerique.square_games.engine.GameFactory;

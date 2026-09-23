@@ -1,4 +1,4 @@
-package fr.games.square.api.dao.entity;
+package fr.games.square.api.entity;
 
 import jakarta.persistence.*;
 
