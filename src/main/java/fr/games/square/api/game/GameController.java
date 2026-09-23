@@ -3,6 +3,8 @@ package fr.games.square.api.game;
 import fr.games.square.api.client.UserValidationClient;
 import fr.le_campus_numerique.square_games.engine.CellPosition;
 import fr.le_campus_numerique.square_games.engine.Game;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
@@ -11,6 +13,7 @@ import java.util.Collection;
 import java.util.List;
 import java.util.UUID;
 
+@Tag(name = "Jeux", description = "Gestion des parties et coups de plateau")
 @RestController
 public class GameController {
     private final GameService gameService;
@@ -21,6 +24,7 @@ public class GameController {
         this.userValidationClient = userValidationClient;
     }
 
+    @Operation(summary = "Créer une nouvelle partie (X-UserId requis)")
     @PostMapping("/games")
     @ResponseStatus(HttpStatus.CREATED)
     public Game createGame(
@@ -30,12 +34,14 @@ public class GameController {
         return gameService.createGame(userId, params);
     }
 
+    @Operation(summary = "Lister les parties de l'utilisateur connecté")
     @GetMapping("/games")
     public List<Game> getGames(@RequestHeader("X-UserId") UUID userId) {
         validateUser(userId);
         return gameService.getGamesForUser(userId);
     }
 
+    @Operation(summary = "Obtenir les détails d'une partie'")
     @GetMapping("/games/{gameId}")
     public Game getGame(
             @RequestHeader("X-UserId") UUID userId,
@@ -49,6 +55,7 @@ public class GameController {
         return game;
     }
 
+    @Operation(summary = "Obtenir la liste des coups jouables")
     @GetMapping("/games/{gameId}/moves")
     public Collection<CellPosition> getAllowedMoves(
             @RequestHeader("X-UserId") UUID userId,
@@ -58,6 +65,7 @@ public class GameController {
         return gameService.getAllowedMoves(gameId);
     }
 
+    @Operation(summary = "Jouer un coup sur le plateau (vérifie le tour du joueur)")
     @PostMapping("/games/{gameId}/moves")
     public Game playMove(
             @RequestHeader("X-UserId") UUID userId,
