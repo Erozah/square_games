@@ -1,14 +1,16 @@
 package fr.games.square.api.game;
 
+import java.util.List;
+import java.util.UUID;
+
+
 public class GameCreationParams {
     private String gameType;
     private Integer playerCount;
     private Integer boardSize;
+    private List<UUID> opponentIds;
 
-    public GameCreationParams() {
-    }
-
-    public GameCreationParams(String gameType, Integer playerCount, Integer boardSize) {
+        public GameCreationParams(String gameType, Integer playerCount, Integer boardSize) {
         this.gameType = gameType;
         this.playerCount = playerCount;
         this.boardSize = boardSize;
@@ -36,5 +38,16 @@ public class GameCreationParams {
 
     public void setBoardSize(Integer boardSize) {
         this.boardSize = boardSize;
+    }
+
+    public List<UUID> getOpponentIds() {
+        return opponentIds;
+    }
+
+    public void setOpponentIds(List<UUID> opponentIds) {
+        this.opponentIds = opponentIds;
+    }
+
+    public GameCreationParams() {
     }
 }

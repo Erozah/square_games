@@ -1,10 +1,12 @@
 package fr.games.square.api.client;
 
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestClient;
 
 import java.util.UUID;
 
+@Service
 public class UserValidationClient {
     private final RestClient restClient;
 

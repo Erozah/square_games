@@ -10,11 +10,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
 
-import java.util.Collection;
-import java.util.List;
-import java.util.Optional;
-import java.util.Set;
-import java.util.UUID;
+import java.util.*;
 
 @Service
 public class GameServiceImpl implements GameService {
@@ -28,7 +24,7 @@ public class GameServiceImpl implements GameService {
     }
 
     @Override
-    public Game createGame(GameCreationParams params) {
+    public Game createGame(UUID userId, GameCreationParams params) {
         if (params == null || params.getGameType() == null || params.getGameType().isBlank()) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Le type de jeu (gameType) est requis");
         }
@@ -39,6 +35,20 @@ public class GameServiceImpl implements GameService {
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST, "Type de jeu non supporté : " + params.getGameType()));
 
         try {
+            Set<UUID> playerIds = new LinkedHashSet<>();
+            playerIds.add(userId);
+            if (params.getOpponentIds() != null) {
+                playerIds.addAll(params.getOpponentIds());
+            }
+            int expectedPlayers = (params.getPlayerCount() != null && params.getPlayerCount() > 0)
+                    ? params.getPlayerCount()
+                    : 2;
+            while (playerIds.size() < expectedPlayers) {
+                playerIds.add(UUID.randomUUID());
+            }
+            int boardSize = (params.getBoardSize() != null && params.getBoardSize() > 0)
+                    ? params.getBoardSize()
+                    : plugin.createGame(null, null).getBoardSize();
             Game game = plugin.createGame(params.getPlayerCount(), params.getBoardSize());
             return gameDao.upsert(game);
         } catch (IllegalArgumentException e) {
@@ -76,12 +86,15 @@ public class GameServiceImpl implements GameService {
     }
 
     @Override
-    public Game playMove(UUID gameId, MoveParams params) {
+    public Game playMove(UUID userId, UUID gameId, MoveParams params) {
         Game game = getGame(gameId);
         if (game == null) {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Partie introuvable");
         }
 
+        if (!userId.equals(game.getCurrentPlayerId())) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Ce n'est pas votre tour de jouer !");
+        }
         CellPosition targetPos = new CellPosition(params.getX(), params.getY());
 
         Token boardToken = game.getBoard().get(targetPos);
@@ -108,5 +121,12 @@ public class GameServiceImpl implements GameService {
         } catch (InvalidPositionException e) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Coup invalide : " + e.getMessage());
         }
+    }
+
+    @Override
+    public List<Game> getGamesForUser(UUID userId) {
+        return gameDao.findAll()
+                .filter(game -> game.getPlayerIds().contains(userId))
+                .toList();
     }
 }
