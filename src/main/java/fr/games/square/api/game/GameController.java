@@ -17,11 +17,9 @@ import java.util.UUID;
 @RestController
 public class GameController {
     private final GameService gameService;
-    private final UserValidationClient userValidationClient;
 
-    public GameController(GameService gameService, UserValidationClient userValidationClient) {
+    public GameController(GameService gameService) {
         this.gameService = gameService;
-        this.userValidationClient = userValidationClient;
     }
 
     @Operation(summary = "Créer une nouvelle partie (X-UserId requis)")
