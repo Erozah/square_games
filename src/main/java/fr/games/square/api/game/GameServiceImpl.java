@@ -49,7 +49,7 @@ public class GameServiceImpl implements GameService {
             int boardSize = (params.getBoardSize() != null && params.getBoardSize() > 0)
                     ? params.getBoardSize()
                     : plugin.createGame(null, null).getBoardSize();
-            Game game = plugin.createGame(params.getPlayerCount(), params.getBoardSize());
+            Game game = plugin.getFactory().createGame(boardSize, playerIds);
             return gameDao.upsert(game);
         } catch (IllegalArgumentException e) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Paramètres invalides : " + e.getMessage());
