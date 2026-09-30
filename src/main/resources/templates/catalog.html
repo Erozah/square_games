@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <title>Square Games — Catalogue des Jeux</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 40px;
+            background-color: #f4f6f8;
+            color: #333;
+        }
+        .container {
+            max-width: 700px;
+            background: white;
+            padding: 25px 30px;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #2c3e50;
+            margin-top: 0;
+        }
+        table {
+            border-collapse: collapse;
+            width: 100%;
+            margin-top: 20px;
+        }
+        th, td {
+            border: 1px solid #e1e8ed;
+            padding: 12px 16px;
+            text-align: left;
+        }
+        th {
+            background-color: #34495e;
+            color: white;
+        }
+        tr:nth-child(even) {
+            background-color: #fafbfc;
+        }
+        .badge {
+            background-color: #3498db;
+            color: white;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-family: monospace;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎮 Square Games — Catalogue</h1>
+        <p>Liste des jeux enregistrés et fournis dynamiquement par <code>GameCatalog</code> :</p>
+
+        <table>
+            <thead>
+                <tr>
+                    <th>#</th>
+                    <th>Identifiant (ID)</th>
+                    <th>Nom du jeu</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+            <tbody>
+                <!-- Parcours de la Collection<GameCatalogItem> fournie par GameCatalog -->
+                <tr th:each="jeu, stat : ${jeux}">
+                    <td th:text="${stat.count}">1</td>
+                    <td><span class="badge" th:text="${jeu.id}">tictactoe</span></td>
+                    <!-- GameCatalogItem est un record avec les champs 'id' et 'name' -->
+                    <td th:text="${jeu.name}">Nom du jeu</td>
+                    <td>
+                        <a th:href="@{/web/games/new(gameType=${jeu.id})}" 
+                           style="background: #4361ee; color: white; padding: 6px 12px; border-radius: 6px; text-decoration: none; font-weight: bold; font-size: 13px;">
+                           🎮 Jouer
+                        </a>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+
+        <div style="margin-top: 24px; display: flex; justify-content: space-between; align-items: center;">
+            <a href="/web/games" style="color: #4361ee; text-decoration: none; font-weight: 600;">⬅️ Retour à mes parties</a>
+            <a href="/swagger-ui/index.html" target="_blank" style="color: #64748b; font-size: 13px; text-decoration: none;">Documentation Swagger 📖</a>
+        </div>
+    </div>
+</body>
+</html>

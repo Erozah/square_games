@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mes Parties — Square Games</title>
+    <style>
+        :root {
+            --primary: #4361ee;
+            --primary-hover: #3a56d4;
+            --bg: #f8f9fc;
+            --card: #ffffff;
+            --text: #2b2d42;
+            --text-muted: #8d99ae;
+            --success: #10b981;
+            --warning: #f59e0b;
+            --danger: #ef233c;
+            --border: #e2e8f0;
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; }
+        body { background-color: var(--bg); color: var(--text); padding-bottom: 40px; }
+        
+        /* Navbar */
+        nav {
+            background: white;
+            border-bottom: 1px solid var(--border);
+            padding: 14px 24px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+        }
+        .nav-brand { font-size: 20px; font-weight: 700; color: var(--primary); text-decoration: none; display: flex; align-items: center; gap: 8px; }
+        .nav-links { display: flex; align-items: center; gap: 16px; }
+        .nav-links a { color: var(--text); text-decoration: none; font-weight: 500; font-size: 14px; }
+        .nav-links a:hover { color: var(--primary); }
+        .user-pill {
+            background: #e0e7ff;
+            color: #3730a3;
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 13px;
+            font-family: monospace;
+        }
+        .logout-link { color: var(--danger) !important; margin-left: 8px; }
+
+        .container { max-width: 900px; margin: 30px auto; padding: 0 20px; }
+
+        /* Banner */
+        .hero-banner {
+            background: linear-gradient(135deg, #4361ee, #7209b7);
+            color: white;
+            border-radius: 16px;
+            padding: 28px;
+            margin-bottom: 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .hero-banner h1 { font-size: 24px; margin-bottom: 6px; }
+        .hero-banner p { opacity: 0.9; font-size: 14px; }
+        .btn-new {
+            background: white;
+            color: var(--primary);
+            padding: 12px 20px;
+            border-radius: 8px;
+            text-decoration: none;
+            font-weight: 700;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            transition: transform 0.1s;
+            white-space: nowrap;
+        }
+        .btn-new:hover { transform: translateY(-2px); }
+
+        .alert-error {
+            background: #fee2e2;
+            color: #b91c1c;
+            padding: 14px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            font-size: 14px;
+        }
+
+        /* Section */
+        h2 { font-size: 20px; margin-bottom: 16px; color: var(--text); display: flex; align-items: center; justify-content: space-between; }
+
+        /* Game Cards */
+        .game-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 18px; }
+        .game-card {
+            background: white;
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        .game-card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 6px 16px rgba(0,0,0,0.08);
+        }
+        .game-type { font-size: 18px; font-weight: bold; margin-bottom: 8px; color: var(--text); }
+        .status-badge {
+            display: inline-block;
+            padding: 4px 10px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: bold;
+            text-transform: uppercase;
+            margin-bottom: 12px;
+        }
+        .status-ONGOING { background: #dcfce7; color: #15803d; }
+        .status-TERMINATED { background: #f3f4f6; color: #4b5563; }
+        .status-SETUP { background: #fef3c7; color: #b45309; }
+
+        .game-details { font-size: 13px; color: var(--text-muted); line-height: 1.6; margin-bottom: 16px; }
+
+        .btn-play {
+            background: var(--primary);
+            color: white;
+            text-align: center;
+            padding: 10px;
+            border-radius: 8px;
+            text-decoration: none;
+            font-weight: 600;
+            font-size: 14px;
+            display: block;
+        }
+        .btn-play:hover { background: var(--primary-hover); }
+
+        .empty-state {
+            background: white;
+            border-radius: 12px;
+            padding: 48px;
+            text-align: center;
+            border: 1px dashed var(--border);
+        }
+        .empty-state p { color: var(--text-muted); margin: 12px 0 20px 0; }
+    </style>
+</head>
+<body>
+
+    <!-- Navigation -->
+    <nav>
+        <a href="/web/games" class="nav-brand">🎲 Square Games</a>
+        <div class="nav-links">
+            <a href="/catalog/view">Catalogue</a>
+            <a href="/web/games" style="color: var(--primary); font-weight: bold;">Mes Parties</a>
+            <a href="/web/games/new">+ Nouvelle Partie</a>
+            <span class="user-pill" title="Votre identifiant joueur (UUID)">
+                👤 <span th:text="${userId}">Alice</span>
+            </span>
+            <a href="/web/auth/logout" class="logout-link">Déconnexion</a>
+        </div>
+    </nav>
+
+    <div class="container">
+
+        <div th:if="${error != null}" class="alert-error" th:text="${error}">
+            Message d'erreur
+        </div>
+
+        <!-- Hero Banner -->
+        <div class="hero-banner">
+            <div>
+                <h1>Bienvenue sur vos parties</h1>
+                <p>Retrouvez vos parties en cours ou défiez un ami sur nos jeux de plateau.</p>
+            </div>
+            <a href="/web/games/new" class="btn-new">➕ Lancer une partie</a>
+        </div>
+
+        <!-- Liste des parties -->
+        <h2>
+            Parties en cours
+            <span style="font-size: 14px; color: var(--text-muted);" th:text="|${games.size()} partie(s)|">0 partie</span>
+        </h2>
+
+        <div th:if="${games.isEmpty()}" class="empty-state">
+            <div style="font-size: 48px; margin-bottom: 12px;">🕹️</div>
+            <h3>Aucune partie en cours</h3>
+            <p>Vous n'avez pas encore de partie active. Lancez-vous dès maintenant !</p>
+            <a href="/web/games/new" class="btn-play" style="display: inline-block; padding: 10px 24px;">Créer ma première partie</a>
+        </div>
+
+        <div th:unless="${games.isEmpty()}" class="game-grid">
+            <div th:each="game : ${games}" class="game-card">
+                <div>
+                    <div class="game-type" th:text="${game.factoryId}">Morpion</div>
+                    <span class="status-badge" 
+                          th:classappend="'status-' + ${game.status.name()}"
+                          th:text="${game.status.name()}">ONGOING</span>
+                    
+                    <div class="game-details">
+                        <div><strong>Plateau :</strong> <span th:text="${game.boardSize + 'x' + game.boardSize}">3x3</span></div>
+                        <div><strong>Joueurs :</strong> <span th:text="${game.playerIds.size()}">2</span></div>
+                        <div th:if="${game.currentPlayerId != null}">
+                            <strong>Tour :</strong> 
+                            <span th:if="${game.currentPlayerId.equals(userId)}" style="color: var(--success); font-weight: bold;">C'est à vous !</span>
+                            <span th:unless="${game.currentPlayerId.equals(userId)}" style="color: var(--warning);">Adversaire</span>
+                        </div>
+                    </div>
+                </div>
+
+                <a th:href="@{/web/games/{id}(id=${game.id})}" class="btn-play">
+                    Rejoindre l'arène 👉
+                </a>
+            </div>
+        </div>
+
+    </div>
+
+</body>
+</html>

@@ -3,6 +3,8 @@ package fr.games.square.api.dao;
 import fr.games.square.api.entity.GameEntity;
 import fr.games.square.api.entity.GameTokenEntity;
 import fr.le_campus_numerique.square_games.engine.Game;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.context.annotation.Profile;
 import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
@@ -19,6 +21,8 @@ import java.util.stream.Stream;
 @Profile("jdbc")
 @Transactional
 public class JdbcGameDao implements GameDao {
+
+    private static final Logger log = LoggerFactory.getLogger(JdbcGameDao.class);
 
     private final NamedParameterJdbcTemplate jdbcTemplate;
     private final GameMapper mapper;
@@ -80,7 +84,12 @@ public class JdbcGameDao implements GameDao {
         );
 
         entity.tokens = tokens;
-        return Optional.of(mapper.toGame(entity));
+        try {
+            return Optional.ofNullable(mapper.toGame(entity));
+        } catch (Throwable t) {
+            log.error("Failed to map GameEntity {} to Game: {}", entity.id, t.getMessage(), t);
+            return Optional.empty();
+        }
     }
 
     @Override

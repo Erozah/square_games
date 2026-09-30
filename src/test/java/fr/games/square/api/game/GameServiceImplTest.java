@@ -13,6 +13,7 @@ import org.springframework.context.MessageSource;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.util.List;
+import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -35,7 +36,7 @@ class GameServiceImplTest {
     @Test
     void createGame_TicTacToe_Success() {
         GameCreationParams params = new GameCreationParams("tictactoe", 2, 3);
-        Game game = gameService.createGame(params);
+        Game game = gameService.createGame(UUID.randomUUID(), params);
 
         assertNotNull(game);
         assertNotNull(game.getId());
@@ -51,7 +52,7 @@ class GameServiceImplTest {
     @Test
     void createGame_WithDefaults_Success() {
         GameCreationParams params = new GameCreationParams("tictactoe", 0, 0);
-        Game game = gameService.createGame(params);
+        Game game = gameService.createGame(UUID.randomUUID(), params);
 
         assertNotNull(game);
         assertEquals(3, game.getBoardSize());
@@ -61,7 +62,7 @@ class GameServiceImplTest {
     @Test
     void createGame_Taquin_Success() {
         GameCreationParams params = new GameCreationParams("taquin", 1, 4);
-        Game game = gameService.createGame(params);
+        Game game = gameService.createGame(UUID.randomUUID(), params);
 
         assertNotNull(game);
         assertNotNull(game.getId());
@@ -73,7 +74,7 @@ class GameServiceImplTest {
     @Test
     void createGame_ConnectFour_Success() {
         GameCreationParams params = new GameCreationParams("connect4", 2, 7);
-        Game game = gameService.createGame(params);
+        Game game = gameService.createGame(UUID.randomUUID(), params);
 
         assertNotNull(game);
         assertNotNull(game.getId());
@@ -85,12 +86,12 @@ class GameServiceImplTest {
     @Test
     void createGame_UnknownGameType_ThrowsBadRequest() {
         GameCreationParams params = new GameCreationParams("unknown_game", 2, 3);
-        assertThrows(ResponseStatusException.class, () -> gameService.createGame(params));
+        assertThrows(ResponseStatusException.class, () -> gameService.createGame(UUID.randomUUID(), params));
     }
 
     @Test
     void createGame_InvalidPlayerCount_ThrowsBadRequest() {
         GameCreationParams params = new GameCreationParams("tictactoe", 4, 3);
-        assertThrows(ResponseStatusException.class, () -> gameService.createGame(params));
+        assertThrows(ResponseStatusException.class, () -> gameService.createGame(UUID.randomUUID(), params));
     }
 }

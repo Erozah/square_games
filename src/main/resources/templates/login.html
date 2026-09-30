@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Connexion — Square Games</title>
+    <style>
+        :root {
+            --primary: #4361ee;
+            --primary-hover: #3a56d4;
+            --bg: #f8f9fc;
+            --card: #ffffff;
+            --text: #2b2d42;
+            --text-muted: #8d99ae;
+            --danger: #ef233c;
+            --border: #e2e8f0;
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; }
+        body {
+            background-color: var(--bg);
+            color: var(--text);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        .login-card {
+            background: var(--card);
+            border-radius: 16px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+            border: 1px solid var(--border);
+            width: 100%;
+            max-width: 440px;
+            padding: 36px;
+        }
+        .header {
+            text-align: center;
+            margin-bottom: 28px;
+        }
+        .logo { font-size: 42px; margin-bottom: 8px; }
+        h1 { font-size: 24px; color: var(--text); margin-bottom: 6px; }
+        p.subtitle { color: var(--text-muted); font-size: 14px; }
+        
+        .alert {
+            background-color: #fee2e2;
+            border-left: 4px solid var(--danger);
+            color: #b91c1c;
+            padding: 12px;
+            border-radius: 6px;
+            font-size: 14px;
+            margin-bottom: 20px;
+        }
+        
+        .form-group {
+            margin-bottom: 18px;
+        }
+        label {
+            display: block;
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--text);
+            margin-bottom: 6px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        input[type="text"], input[type="password"] {
+            width: 100%;
+            padding: 12px 14px;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            font-size: 15px;
+            transition: border-color 0.2s, box-shadow 0.2s;
+        }
+        input:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(67, 97, 238, 0.15);
+        }
+        .btn {
+            width: 100%;
+            padding: 13px;
+            background-color: var(--primary);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 15px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.2s, transform 0.1s;
+        }
+        .btn:hover { background-color: var(--primary-hover); }
+        .btn:active { transform: scale(0.98); }
+
+        .divider {
+            display: flex;
+            align-items: center;
+            text-align: center;
+            margin: 24px 0;
+            color: var(--text-muted);
+            font-size: 13px;
+        }
+        .divider::before, .divider::after {
+            content: '';
+            flex: 1;
+            border-bottom: 1px solid var(--border);
+        }
+        .divider span { padding: 0 10px; }
+
+        .hint {
+            margin-top: 20px;
+            padding: 12px;
+            background: #eff6ff;
+            border-radius: 8px;
+            font-size: 13px;
+            color: #1e40af;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="login-card">
+        <div class="header">
+            <div class="logo">🎲</div>
+            <h1>Square Games</h1>
+            <p class="subtitle">Connectez-vous pour rejoindre vos parties</p>
+        </div>
+
+        <div th:if="${registered}" class="alert" style="background-color: #dcfce7; border-left-color: #22c55e; color: #15803d;">
+            <span>Compte créé avec succès ! Vous pouvez maintenant vous connecter.</span>
+        </div>
+
+        <div th:if="${hasError or error != null}" class="alert">
+            <span th:text="${error != null ? error : 'Identifiants invalides ou service utilisateurs (8081) indisponible.'}">Erreur</span>
+        </div>
+
+        <!-- Formulaire avec Identifiants -->
+        <form th:action="@{/web/auth/login}" method="post">
+            <div class="form-group">
+                <label for="username">Nom d'utilisateur</label>
+                <input type="text" id="username" name="username" placeholder="ex: alice" required autofocus>
+            </div>
+
+            <div class="form-group">
+                <label for="password">Mot de passe</label>
+                <input type="password" id="password" name="password" placeholder="••••••••" required>
+            </div>
+
+            <button type="submit" class="btn">Se connecter</button>
+        </form>
+
+        <div style="text-align: center; margin-top: 16px;">
+            <span style="font-size: 14px; color: var(--text-muted);">Pas encore de compte ?</span>
+            <a th:href="@{/web/register}" style="color: var(--primary); font-size: 14px; font-weight: 600; text-decoration: none; margin-left: 5px;">Créer un compte</a>
+        </div>
+
+        <div class="divider">
+            <span>OU (TEST RAPIDE)</span>
+        </div>
+
+        <!-- Formulaire avec Token direct -->
+        <form th:action="@{/web/auth/login}" method="post">
+            <div class="form-group">
+                <label for="directToken">Coller un token JWT existant</label>
+                <input type="text" id="directToken" name="directToken" placeholder="eyJhbGciOiJIUzI1NiIsIn...">
+            </div>
+            <button type="submit" class="btn" style="background-color: #4a5568;">Utiliser ce token</button>
+        </form>
+
+        <div class="hint">
+            💡 <strong>Astuce :</strong> Vous pouvez créer vos utilisateurs via <code>/web/register</code> ou directement sur le service <code>users</code> (port 8081).
+        </div>
+    </div>
+
+</body>
+</html>

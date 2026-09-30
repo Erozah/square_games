@@ -1,0 +1,421 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Arène de Jeu — Square Games</title>
+    <!-- Rafraîchissement automatique toutes les 4 secondes si la partie est en cours et que ce n'est pas mon tour -->
+    <meta th:if="${status != 'TERMINATED' and !isMyTurn}" http-equiv="refresh" content="4">
+    <style>
+        :root {
+            --primary: #4361ee;
+            --primary-hover: #3a56d4;
+            --bg: #f8f9fc;
+            --card: #ffffff;
+            --text: #2b2d42;
+            --text-muted: #8d99ae;
+            --success: #10b981;
+            --warning: #f59e0b;
+            --danger: #ef233c;
+            --border: #e2e8f0;
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; }
+        body { background-color: var(--bg); color: var(--text); padding-bottom: 40px; }
+
+        /* Navbar */
+        nav {
+            background: white;
+            border-bottom: 1px solid var(--border);
+            padding: 14px 24px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+        }
+        .nav-brand { font-size: 20px; font-weight: 700; color: var(--primary); text-decoration: none; }
+        .nav-links { display: flex; align-items: center; gap: 16px; }
+        .nav-links a { color: var(--text); text-decoration: none; font-weight: 500; font-size: 14px; }
+        .nav-links a:hover { color: var(--primary); }
+
+        .container { max-width: 960px; margin: 24px auto; padding: 0 20px; }
+
+        /* Layout jeu */
+        .game-layout {
+            display: grid;
+            grid-template-columns: 1fr 300px;
+            gap: 24px;
+            align-items: start;
+        }
+        @media (max-width: 768px) {
+            .game-layout { grid-template-columns: 1fr; }
+        }
+
+        .card {
+            background: white;
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 24px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.04);
+        }
+
+        /* Bannière statut / tour */
+        .turn-banner {
+            padding: 14px 20px;
+            border-radius: 12px;
+            margin-bottom: 20px;
+            font-weight: 600;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 15px;
+        }
+        .turn-my-turn { background: #dcfce7; color: #15803d; border: 1px solid #bbf7d0; }
+        .turn-waiting { background: #fef3c7; color: #92400e; border: 1px solid #fde68a; }
+        .turn-finished { background: #f1f5f9; color: #475569; border: 1px solid #cbd5e1; }
+
+        .alert-error {
+            background: #fee2e2;
+            color: #b91c1c;
+            padding: 12px;
+            border-radius: 8px;
+            margin-bottom: 16px;
+            font-size: 14px;
+        }
+
+        /* Plateau de Jeu Général */
+        .board-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 24px 16px;
+            background: #f1f5f9;
+            border-radius: 16px;
+            overflow-x: auto;
+        }
+        .board-grid {
+            display: grid;
+            gap: 8px;
+        }
+
+        /* Cases standards (Morpion, Taquin) */
+        .cell {
+            width: 75px;
+            height: 75px;
+            background: white;
+            border-radius: 10px;
+            border: 2px solid #cbd5e1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 30px;
+            font-weight: 800;
+            position: relative;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.04);
+            user-select: none;
+        }
+        .cell.token-X { color: #ef233c; }
+        .cell.token-O { color: #3a86ff; }
+        .cell.token-other { color: #2b2d42; font-size: 22px; }
+
+        .cell.allowed {
+            border: 2px dashed #10b981;
+            background: #ecfdf5;
+            cursor: pointer;
+            transition: transform 0.1s, background 0.2s;
+        }
+        .cell.allowed:hover {
+            background: #d1fae5;
+            transform: scale(1.04);
+            box-shadow: 0 4px 10px rgba(16, 185, 129, 0.25);
+        }
+        .btn-move {
+            width: 100%;
+            height: 100%;
+            background: transparent;
+            border: none;
+            color: #10b981;
+            font-size: 28px;
+            font-weight: bold;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        /* ------------------------------------------------------------- */
+        /* STYLES DÉDIÉS PUISSANCE 4 (CONNECT FOUR)                      */
+        /* ------------------------------------------------------------- */
+        .c4-arrows-row {
+            display: grid;
+            grid-template-columns: repeat(7, 60px);
+            gap: 8px;
+            margin-bottom: 12px;
+            justify-content: center;
+        }
+        .btn-drop {
+            width: 100%;
+            height: 42px;
+            background: #10b981;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 22px;
+            font-weight: bold;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 3px 6px rgba(16, 185, 129, 0.3);
+            transition: transform 0.15s, background 0.15s;
+        }
+        .btn-drop:hover {
+            background: #059669;
+            transform: translateY(3px);
+        }
+        .btn-drop-disabled {
+            width: 100%;
+            height: 42px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #94a3b8;
+            font-size: 20px;
+            opacity: 0.3;
+        }
+        .c4-cabinet {
+            background: #1d4ed8;
+            padding: 14px;
+            border-radius: 18px;
+            box-shadow: inset 0 2px 4px rgba(255,255,255,0.25), 0 10px 25px rgba(0,0,0,0.25);
+            display: grid;
+            grid-template-columns: repeat(7, 60px);
+            gap: 8px;
+            justify-content: center;
+        }
+        .c4-slot {
+            width: 60px;
+            height: 60px;
+            background: #172554;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: inset 0 4px 8px rgba(0,0,0,0.6);
+            position: relative;
+        }
+        .c4-disc {
+            width: 52px;
+            height: 52px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 800;
+            font-size: 16px;
+            box-shadow: inset 0 2px 4px rgba(255,255,255,0.4), 0 3px 6px rgba(0,0,0,0.3);
+            user-select: none;
+        }
+        .c4-disc-R {
+            background: radial-gradient(circle at 35% 35%, #f87171, #dc2626);
+            color: white;
+        }
+        .c4-disc-Y {
+            background: radial-gradient(circle at 35% 35%, #fde047, #ca8a04);
+            color: #713f12;
+        }
+
+        /* Sidebar infos */
+        .info-title { font-size: 16px; font-weight: 700; margin-bottom: 12px; }
+        .info-item { font-size: 13px; margin-bottom: 10px; color: var(--text-muted); }
+        .info-item strong { color: var(--text); }
+        .player-badge {
+            display: block;
+            padding: 8px 12px;
+            border-radius: 8px;
+            background: #f8fafc;
+            border: 1px solid var(--border);
+            font-family: monospace;
+            font-size: 12px;
+            margin-top: 6px;
+            word-break: break-all;
+        }
+        .player-current {
+            border-color: var(--success);
+            background: #f0fdf4;
+            color: #166534;
+            font-weight: bold;
+        }
+        .btn-refresh {
+            width: 100%;
+            padding: 10px;
+            background: #f1f5f9;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            color: var(--text);
+            margin-top: 14px;
+            transition: background 0.2s;
+        }
+        .btn-refresh:hover { background: #e2e8f0; }
+    </style>
+</head>
+<body>
+
+    <!-- Navigation -->
+    <nav>
+        <a href="/web/games" class="nav-brand">🎲 Square Games</a>
+        <div class="nav-links">
+            <a href="/catalog/view">Catalogue</a>
+            <a href="/web/games">Mes Parties</a>
+            <a href="/web/games/new">+ Nouvelle Partie</a>
+            <a href="/web/auth/logout" style="color: var(--danger);">Déconnexion</a>
+        </div>
+    </nav>
+
+    <div class="container">
+
+        <div th:if="${error != null}" class="alert-error" th:text="${error}">
+            Coup non autorisé
+        </div>
+
+        <!-- Indicateur de tour -->
+        <div class="turn-banner" 
+             th:classappend="${status == 'TERMINATED' ? 'turn-finished' : (isMyTurn ? 'turn-my-turn' : 'turn-waiting')}">
+            <span th:if="${status == 'TERMINATED'}">🏆 Partie terminée !</span>
+            <span th:if="${status != 'TERMINATED' and isMyTurn and isConnectFour}">🟢 C'est votre tour ! Cliquez sur une flèche ⬇ au-dessus de la colonne pour insérer votre jeton.</span>
+            <span th:if="${status != 'TERMINATED' and isMyTurn and !isConnectFour}">🟢 C'est votre tour de jouer ! Cliquez sur une case verte.</span>
+            <span th:if="${status != 'TERMINATED' and !isMyTurn}">⏳ En attente de l'adversaire... (la page se rafraîchit automatiquement)</span>
+            
+            <button onclick="location.reload()" style="background: none; border: none; cursor: pointer; font-size: 16px;" title="Rafraîchir manuellement">🔄</button>
+        </div>
+
+        <div class="game-layout">
+
+            <!-- Plateau interactif -->
+            <div class="card" style="text-align: center;">
+                <h2 style="margin-bottom: 16px;">
+                    Plateau <span th:text="${game.factoryId}">tictactoe</span> 
+                    <span th:if="${isConnectFour}">(7 colonnes x 6 lignes)</span>
+                    <span th:unless="${isConnectFour}" th:text="'(' + ${game.boardSize} + 'x' + ${game.boardSize} + ')'">(3x3)</span>
+                </h2>
+
+                <div class="board-container">
+
+                    <!-- ======================================================== -->
+                    <!-- CAS 1 : PUISSANCE 4 (CONNECT FOUR)                       -->
+                    <!-- ======================================================== -->
+                    <div th:if="${isConnectFour}">
+                        
+                        <!-- Flèches d'insertion au-dessus des 7 colonnes -->
+                        <div class="c4-arrows-row">
+                            <div th:each="action : ${columnActions}">
+                                <!-- Flèche cliquable si coup autorisé et mon tour -->
+                                <form th:if="${action.allowed and isMyTurn and status != 'TERMINATED'}" 
+                                      th:action="@{/web/games/{id}/moves(id=${game.id})}" 
+                                      method="post">
+                                    <input type="hidden" name="x" th:value="${action.col}"/>
+                                    <input type="hidden" name="y" value="-1"/>
+                                    <button type="submit" class="btn-drop" title="Déposer dans cette colonne">⬇</button>
+                                </form>
+                                <!-- Colonne pleine ou pas mon tour -->
+                                <span th:unless="${action.allowed and isMyTurn and status != 'TERMINATED'}" 
+                                      class="btn-drop-disabled">·</span>
+                            </div>
+                        </div>
+
+                        <!-- Grille bleue du Puissance 4 (6 lignes x 7 colonnes) -->
+                        <div class="c4-cabinet">
+                            <th:block th:each="row : ${grid}">
+                                <div th:each="cell : ${row}" class="c4-slot">
+                                    <!-- Jeton Rouge -->
+                                    <div th:if="${cell.tokenName == 'R'}" class="c4-disc c4-disc-R" title="Rouge">🔴</div>
+                                    <!-- Jeton Jaune -->
+                                    <div th:if="${cell.tokenName == 'Y'}" class="c4-disc c4-disc-Y" title="Jaune">🟡</div>
+                                    <!-- Jeton Autre -->
+                                    <div th:if="${cell.tokenName != null and cell.tokenName != 'R' and cell.tokenName != 'Y'}" 
+                                         class="c4-disc" style="background: white; color: #1e293b;" th:text="${cell.tokenName}">?</div>
+                                </div>
+                            </th:block>
+                        </div>
+
+                    </div>
+
+                    <!-- ======================================================== -->
+                    <!-- CAS 2 : MORPION & TAQUIN (GRILLE STANDARD)              -->
+                    <!-- ======================================================== -->
+                    <div th:unless="${isConnectFour}" 
+                         class="board-grid" 
+                         th:style="'grid-template-columns: repeat(' + ${game.boardSize} + ', 75px);'">
+                        
+                        <!-- Lignes de la grille -->
+                        <th:block th:each="row : ${grid}">
+                            <!-- Cases de la ligne -->
+                            <div th:each="cell : ${row}" 
+                                 class="cell"
+                                 th:classappend="${cell.tokenName == 'X' ? 'token-X' : (cell.tokenName == 'O' ? 'token-O' : (cell.tokenName != null ? 'token-other' : (cell.allowed and isMyTurn ? 'allowed' : '')))}">
+                                
+                                <!-- 1. Pion déjà posé -->
+                                <span th:if="${cell.tokenName != null}" th:text="${cell.tokenName}">X</span>
+
+                                <!-- 2. Case vide cliquable (Mon tour + Coup autorisé) -->
+                                <form th:if="${(cell.tokenName == null or cell.allowed) and cell.allowed and isMyTurn and status != 'TERMINATED'}" 
+                                      th:action="@{/web/games/{id}/moves(id=${game.id})}" 
+                                      method="post" 
+                                      style="width: 100%; height: 100%;">
+                                    <input type="hidden" name="x" th:value="${cell.x}"/>
+                                    <input type="hidden" name="y" th:value="${cell.y}"/>
+                                    <button type="submit" class="btn-move" title="Jouer ici">+</button>
+                                </form>
+
+                                <!-- 3. Case vide non autorisée -->
+                                <span th:if="${cell.tokenName == null and (!cell.allowed or !isMyTurn)}" 
+                                      style="opacity: 0.15; font-size: 16px;">•</span>
+                            </div>
+                        </th:block>
+
+                    </div>
+
+                </div>
+            </div>
+
+            <!-- Panneau latéral d'informations -->
+            <div class="card">
+                <div class="info-title">Détails de la Partie</div>
+
+                <div class="info-item">
+                    <strong>Jeu :</strong> <span th:text="${game.factoryId}">connect4</span>
+                </div>
+                <div class="info-item">
+                    <strong>Statut :</strong> <span th:text="${game.status}">ONGOING</span>
+                </div>
+                <div class="info-item">
+                    <strong>Identifiant Partie :</strong>
+                    <div class="player-badge" th:text="${game.id}">uuid-partie</div>
+                </div>
+
+                <hr style="border: 0; border-top: 1px solid var(--border); margin: 16px 0;">
+
+                <div class="info-title">Joueurs</div>
+                <div th:each="pId : ${game.playerIds}">
+                    <div class="player-badge" 
+                         th:classappend="${pId.equals(game.currentPlayerId) ? 'player-current' : ''}">
+                        <span th:if="${pId.equals(userId)}">👉 <strong>Vous</strong></span>
+                        <span th:unless="${pId.equals(userId)}">👤 <strong>Adversaire</strong></span>
+                        <span th:if="${pId.equals(game.currentPlayerId)}" style="float: right;">🎯 Tour</span>
+                        <br>
+                        <span th:text="${pId}">uuid</span>
+                    </div>
+                </div>
+
+                <button class="btn-refresh" onclick="location.reload()">🔄 Actualiser la page</button>
+                <a href="/web/games" style="display: block; text-align: center; margin-top: 12px; font-size: 14px; color: var(--text-muted); text-decoration: none;">← Retour à mes parties</a>
+            </div>
+
+        </div>
+
+    </div>
+
+</body>
+</html>

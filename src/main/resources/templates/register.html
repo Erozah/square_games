@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Inscription — Square Games</title>
+    <style>
+        :root {
+            --primary: #4361ee;
+            --primary-hover: #3a56d4;
+            --bg: #f8f9fc;
+            --card: #ffffff;
+            --text: #2b2d42;
+            --text-muted: #8d99ae;
+            --danger: #ef233c;
+            --border: #e2e8f0;
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; }
+        body {
+            background-color: var(--bg);
+            color: var(--text);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        .register-card {
+            background: var(--card);
+            border-radius: 16px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+            border: 1px solid var(--border);
+            width: 100%;
+            max-width: 440px;
+            padding: 36px;
+        }
+        .header {
+            text-align: center;
+            margin-bottom: 28px;
+        }
+        .logo { font-size: 42px; margin-bottom: 8px; }
+        h1 { font-size: 24px; color: var(--text); margin-bottom: 6px; }
+        p.subtitle { color: var(--text-muted); font-size: 14px; }
+        
+        .alert {
+            background-color: #fee2e2;
+            border-left: 4px solid var(--danger);
+            color: #b91c1c;
+            padding: 12px;
+            border-radius: 6px;
+            font-size: 14px;
+            margin-bottom: 20px;
+        }
+        
+        .form-group {
+            margin-bottom: 18px;
+        }
+        label {
+            display: block;
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--text);
+            margin-bottom: 6px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        input[type="text"], input[type="email"], input[type="password"] {
+            width: 100%;
+            padding: 12px 14px;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            font-size: 15px;
+            transition: border-color 0.2s, box-shadow 0.2s;
+        }
+        input:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(67, 97, 238, 0.15);
+        }
+        .btn {
+            display: block;
+            width: 100%;
+            padding: 12px;
+            background-color: var(--primary);
+            color: #ffffff;
+            border: none;
+            border-radius: 8px;
+            font-size: 15px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background-color 0.2s, transform 0.1s;
+        }
+        .btn:hover { background-color: var(--primary-hover); }
+        .btn:active { transform: scale(0.98); }
+        
+        .footer-link {
+            text-align: center;
+            margin-top: 20px;
+            font-size: 14px;
+            color: var(--text-muted);
+        }
+        .footer-link a {
+            color: var(--primary);
+            text-decoration: none;
+            font-weight: 600;
+            margin-left: 5px;
+        }
+        .footer-link a:hover {
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="register-card">
+        <div class="header">
+            <div class="logo">✨</div>
+            <h1>Créer un compte</h1>
+            <p class="subtitle">Inscrivez-vous pour jouer à Square Games</p>
+        </div>
+
+        <div th:if="${hasError or errorMessage != null}" class="alert">
+            <span th:text="${errorMessage != null ? errorMessage : 'Une erreur est survenue lors de la création du compte. Vérifiez que le service users:8081 est bien démarré.'}">Erreur</span>
+        </div>
+
+        <form th:action="@{/web/auth/register}" method="post">
+            <div class="form-group">
+                <label for="username">Nom d'utilisateur</label>
+                <input type="text" id="username" name="username" placeholder="ex: alice ou bob" required autofocus>
+            </div>
+
+            <div class="form-group">
+                <label for="email">Adresse Email</label>
+                <input type="email" id="email" name="email" placeholder="alice@test.com" required>
+            </div>
+
+            <div class="form-group">
+                <label for="password">Mot de passe</label>
+                <input type="password" id="password" name="password" placeholder="••••••••" required>
+            </div>
+
+            <button type="submit" class="btn">Créer mon compte</button>
+        </form>
+
+        <div class="footer-link">
+            <span>Déjà un compte ?</span>
+            <a th:href="@{/web/login}">Se connecter</a>
+        </div>
+    </div>
+
+</body>
+</html>

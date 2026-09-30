@@ -96,6 +96,9 @@ public class GameServiceImpl implements GameService {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Ce n'est pas votre tour de jouer !");
         }
         CellPosition targetPos = new CellPosition(params.getX(), params.getY());
+        if (game.getFactoryId() != null && game.getFactoryId().toLowerCase().contains("connect") && targetPos.y() >= 0) {
+            targetPos = new CellPosition(targetPos.x(), -1);
+        }
 
         Token boardToken = game.getBoard().get(targetPos);
         if (boardToken != null && boardToken.canMove()) {
