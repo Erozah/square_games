@@ -7,6 +7,7 @@ import org.springframework.stereotype.Component;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
+import java.util.UUID;
 import java.util.stream.Stream;
 
 @Component
@@ -18,6 +19,15 @@ public class InMemoryGameDao implements GameDao {
     @Override
     public Stream<Game> findAll() {
         return games.values().stream();
+    }
+
+    @Override
+    public Stream<Game> findByPlayerId(UUID userId) {
+        if (userId == null) {
+            return Stream.empty();
+        }
+        return games.values().stream()
+                .filter(game -> game.getPlayerIds() != null && game.getPlayerIds().contains(userId));
     }
 
     @Override

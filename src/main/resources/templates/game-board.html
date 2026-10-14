@@ -284,9 +284,27 @@
         <div class="turn-banner" 
              th:classappend="${status == 'TERMINATED' ? 'turn-finished' : (isMyTurn ? 'turn-my-turn' : 'turn-waiting')}">
             <span th:if="${status == 'TERMINATED'}">🏆 Partie terminée !</span>
-            <span th:if="${status != 'TERMINATED' and isMyTurn and isConnectFour}">🟢 C'est votre tour ! Cliquez sur une flèche ⬇ au-dessus de la colonne pour insérer votre jeton.</span>
-            <span th:if="${status != 'TERMINATED' and isMyTurn and !isConnectFour}">🟢 C'est votre tour de jouer ! Cliquez sur une case verte.</span>
-            <span th:if="${status != 'TERMINATED' and !isMyTurn}">⏳ En attente de l'adversaire... (la page se rafraîchit automatiquement)</span>
+            
+            <!-- Mode Multijoueur Local -->
+            <th:block th:if="${status != 'TERMINATED' and isLocal}">
+                <span th:if="${isConnectFour}">
+                    🎮 <strong>Multijoueur Local</strong> — Au tour du 
+                    <strong th:text="${game.currentPlayerId.equals(userId) ? 'Joueur 1 (🔴 Rouge - Vous)' : 'Joueur 2 (🟡 Jaune - Local)'}"></strong> :
+                    cliquez sur une flèche ⬇ pour insérer un jeton.
+                </span>
+                <span th:unless="${isConnectFour}">
+                    🎮 <strong>Multijoueur Local</strong> — Au tour du 
+                    <strong th:text="${game.currentPlayerId.equals(userId) ? 'Joueur 1 (Vous)' : 'Joueur 2 (Local)'}"></strong> :
+                    cliquez sur une case verte.
+                </span>
+            </th:block>
+
+            <!-- Mode En ligne -->
+            <th:block th:if="${status != 'TERMINATED' and !isLocal}">
+                <span th:if="${isMyTurn and isConnectFour}">🟢 C'est votre tour ! Cliquez sur une flèche ⬇ au-dessus de la colonne pour insérer votre jeton.</span>
+                <span th:if="${isMyTurn and !isConnectFour}">🟢 C'est votre tour de jouer ! Cliquez sur une case verte.</span>
+                <span th:if="${!isMyTurn}">⏳ En attente de l'adversaire... (la page se rafraîchit automatiquement)</span>
+            </th:block>
             
             <button onclick="location.reload()" style="background: none; border: none; cursor: pointer; font-size: 16px;" title="Rafraîchir manuellement">🔄</button>
         </div>
@@ -401,11 +419,12 @@
                 <div th:each="pId : ${game.playerIds}">
                     <div class="player-badge" 
                          th:classappend="${pId.equals(game.currentPlayerId) ? 'player-current' : ''}">
-                        <span th:if="${pId.equals(userId)}">👉 <strong>Vous</strong></span>
-                        <span th:unless="${pId.equals(userId)}">👤 <strong>Adversaire</strong></span>
+                        <span th:if="${pId.equals(userId)}">👉 <strong>Joueur 1 (Vous)</strong></span>
+                        <span th:if="${!pId.equals(userId) and isLocal}">👥 <strong>Joueur 2 (Local)</strong></span>
+                        <span th:if="${!pId.equals(userId) and !isLocal}">👤 <strong>Adversaire</strong></span>
                         <span th:if="${pId.equals(game.currentPlayerId)}" style="float: right;">🎯 Tour</span>
                         <br>
-                        <span th:text="${pId}">uuid</span>
+                        <span th:text="${pId.toString().startsWith('00000000-0000-') ? 'Joueur Local (Même écran)' : pId}">uuid</span>
                     </div>
                 </div>
 

@@ -5,6 +5,7 @@ import fr.games.square.api.catalog.GameCatalogItem;
 import fr.games.square.api.client.UserValidationClient;
 import fr.games.square.api.game.GameCreationParams;
 import fr.games.square.api.game.GameService;
+import fr.games.square.api.game.GameServiceImpl;
 import fr.games.square.api.game.MoveParams;
 import fr.le_campus_numerique.square_games.engine.CellPosition;
 import fr.le_campus_numerique.square_games.engine.Game;
@@ -20,6 +21,10 @@ import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import java.util.*;
 import java.util.stream.Collectors;
 
+import fr.games.square.api.plugin.CellView;
+import fr.games.square.api.plugin.ColumnAction;
+import fr.games.square.api.plugin.GamePlugin;
+
 @Controller
 @RequestMapping("/web")
 public class WebGameController {
@@ -27,18 +32,19 @@ public class WebGameController {
     private final GameService gameService;
     private final GameCatalog gameCatalog;
     private final UserValidationClient userValidationClient;
+    private final List<GamePlugin> gamePlugins;
 
-    public WebGameController(GameService gameService, GameCatalog gameCatalog, UserValidationClient userValidationClient) {
+    public WebGameController(
+            GameService gameService,
+            GameCatalog gameCatalog,
+            UserValidationClient userValidationClient,
+            List<GamePlugin> gamePlugins
+    ) {
         this.gameService = gameService;
         this.gameCatalog = gameCatalog;
         this.userValidationClient = userValidationClient;
+        this.gamePlugins = gamePlugins;
     }
-
-    /**
-     * DTO vue pour une case de la grille du plateau
-     */
-    public record CellView(int x, int y, String tokenName, boolean allowed) {}
-    public record ColumnAction(int col, boolean allowed) {}
 
     // -------------------------------------------------------------
     // 1. Authentification Web (Login / Logout)
@@ -90,6 +96,7 @@ public class WebGameController {
             cookie.setPath("/");
             cookie.setMaxAge(86400);
             cookie.setHttpOnly(true);
+            cookie.setAttribute("SameSite", "Lax");
             response.addCookie(cookie);
             return "redirect:/web/games";
         }
@@ -125,6 +132,7 @@ public class WebGameController {
             cookie.setPath("/");
             cookie.setMaxAge(86400); // 24h
             cookie.setHttpOnly(true);
+            cookie.setAttribute("SameSite", "Lax");
             response.addCookie(cookie);
 
             return "redirect:/web/games";
@@ -139,6 +147,7 @@ public class WebGameController {
         Cookie cookie = new Cookie("jwt_token", null);
         cookie.setPath("/");
         cookie.setMaxAge(0);
+        cookie.setAttribute("SameSite", "Lax");
         response.addCookie(cookie);
         return "redirect:/web/login";
     }
@@ -247,68 +256,35 @@ public class WebGameController {
             return "redirect:/web/games";
         }
 
-        boolean isMyTurn = userId.equals(game.getCurrentPlayerId());
+        if (game.getPlayerIds() == null || !game.getPlayerIds().contains(userId)) {
+            redirectAttributes.addFlashAttribute("error", "Vous ne faites pas partie de cette partie");
+            return "redirect:/web/games";
+        }
+
+        boolean isLocal = GameServiceImpl.isLocalGame(game);
+        boolean isMyTurn = isLocal || userId.equals(game.getCurrentPlayerId());
         Collection<CellPosition> allowedPositions = isMyTurn ? gameService.getAllowedMoves(gameId) : Collections.emptyList();
 
-        boolean isConnectFour = game.getFactoryId() != null && game.getFactoryId().toLowerCase().contains("connect");
-        List<ColumnAction> columnActions = new ArrayList<>();
-        List<List<CellView>> grid = new ArrayList<>();
+        GamePlugin plugin = gamePlugins.stream()
+                .filter(p -> p.supports(game.getFactoryId()) || p.getId().equalsIgnoreCase(game.getFactoryId()))
+                .findFirst()
+                .orElse(null);
 
-        if (isConnectFour) {
-            int numCols = 7;
-            int numRows = 6;
-
-            // Flèches d'insertion au-dessus de chaque colonne (y = -1)
-            for (int col = 0; col < numCols; col++) {
-                boolean allowed = isMyTurn && allowedPositions.contains(new CellPosition(col, -1));
-                columnActions.add(new ColumnAction(col, allowed));
-            }
-
-            // Récupération des jetons groupés et triés par colonne du bas vers le haut
-            Map<Integer, List<Token>> tokensByCol = game.getBoard().values().stream()
-                    .filter(t -> t.getOwnerId().isPresent() && t.getPosition() != null)
-                    .collect(Collectors.groupingBy(t -> t.getPosition().x()));
-
-            // Grille de 6 lignes x 7 colonnes, affichée de la ligne du haut (slot = 5) vers le bas (slot = 0)
-            for (int slot = numRows - 1; slot >= 0; slot--) {
-                List<CellView> row = new ArrayList<>(numCols);
-                for (int col = 0; col < numCols; col++) {
-                    List<Token> colTokens = tokensByCol.get(col);
-                    String tokenName = null;
-                    if (colTokens != null && !colTokens.isEmpty()) {
-                        List<Token> sorted = colTokens.stream()
-                                .sorted(Comparator.comparingInt(t -> t.getPosition().y()))
-                                .toList();
-                        if (slot < sorted.size()) {
-                            tokenName = sorted.get(slot).getName();
-                        }
-                    }
-                    row.add(new CellView(col, slot, tokenName, false));
-                }
-                grid.add(row);
-            }
-        } else {
-            // Construction de la grille 2D pour Morpion et Taquin
-            int size = game.getBoardSize();
-            for (int x = 0; x < size; x++) {
-                List<CellView> row = new ArrayList<>(size);
-                for (int y = 0; y < size; y++) {
-                    CellPosition pos = new CellPosition(x, y);
-                    Token token = game.getBoard().get(pos);
-                    String tokenName = token != null ? token.getName() : null;
-                    boolean isAllowed = allowedPositions.contains(pos);
-
-                    row.add(new CellView(x, y, tokenName, isAllowed));
-                }
-                grid.add(row);
-            }
-        }
+        boolean isColumnBased = plugin != null && plugin.isColumnBased();
+        List<ColumnAction> columnActions = plugin != null
+                ? plugin.buildColumnActions(game, isMyTurn, allowedPositions)
+                : Collections.emptyList();
+        List<List<CellView>> grid = plugin != null
+                ? plugin.buildGridView(game, allowedPositions)
+                : Collections.emptyList();
 
         model.addAttribute("userId", userId);
         model.addAttribute("game", game);
         model.addAttribute("grid", grid);
-        model.addAttribute("isConnectFour", isConnectFour);
+        model.addAttribute("isConnectFour", isColumnBased);
+        model.addAttribute("isColumnBased", isColumnBased);
         model.addAttribute("columnActions", columnActions);
+        model.addAttribute("isLocal", isLocal);
         model.addAttribute("isMyTurn", isMyTurn);
         model.addAttribute("status", game.getStatus().name());
 

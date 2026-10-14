@@ -1,17 +1,32 @@
 package fr.games.square.api.client;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.MediaType;
+import org.springframework.http.client.SimpleClientHttpRequestFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestClient;
 
+import java.time.Duration;
+import java.util.Map;
 import java.util.UUID;
 
 @Service
 public class UserValidationClient {
+
+    private static final Logger log = LoggerFactory.getLogger(UserValidationClient.class);
     private final RestClient restClient;
 
     public UserValidationClient(@Value("${users.services.url}") String baseUrl) {
-        this.restClient = RestClient.builder().baseUrl(baseUrl).build();
+        SimpleClientHttpRequestFactory factory = new SimpleClientHttpRequestFactory();
+        factory.setConnectTimeout(Duration.ofSeconds(3));
+        factory.setReadTimeout(Duration.ofSeconds(5));
+
+        this.restClient = RestClient.builder()
+                .baseUrl(baseUrl)
+                .requestFactory(factory)
+                .build();
     }
 
     public boolean isValidUser(UUID userId) {
@@ -22,19 +37,20 @@ public class UserValidationClient {
                     .body(Boolean.class);
             return Boolean.TRUE.equals(isValid);
         } catch (Exception e) {
+            log.warn("Failed to validate user with id {}: {}", userId, e.getMessage());
             return false;
         }
     }
 
     public String login(String username, String password) {
         try {
-            java.util.Map<String, String> body = java.util.Map.of("username", username, "password", password);
-            java.util.Map response = restClient.post()
+            Map<String, String> body = Map.of("username", username, "password", password);
+            Map<?, ?> response = restClient.post()
                     .uri("/auth/login")
-                    .contentType(org.springframework.http.MediaType.APPLICATION_JSON)
+                    .contentType(MediaType.APPLICATION_JSON)
                     .body(body)
                     .retrieve()
-                    .body(java.util.Map.class);
+                    .body(Map.class);
             if (response != null) {
                 Object token = response.get("token");
                 if (token == null) {
@@ -43,25 +59,29 @@ public class UserValidationClient {
                 return token != null ? token.toString() : null;
             }
         } catch (Exception e) {
+            log.warn("Authentication failed for user {}: {}", username, e.getMessage());
             return null;
         }
         return null;
     }
 
-    public java.util.Map<String, Object> register(String username, String email, String password) {
+    public Map<String, Object> register(String username, String email, String password) {
         try {
-            java.util.Map<String, String> body = java.util.Map.of(
+            Map<String, String> body = Map.of(
                     "username", username,
                     "email", email,
                     "password", password
             );
-            return restClient.post()
+            @SuppressWarnings("unchecked")
+            Map<String, Object> result = restClient.post()
                     .uri("/users")
-                    .contentType(org.springframework.http.MediaType.APPLICATION_JSON)
+                    .contentType(MediaType.APPLICATION_JSON)
                     .body(body)
                     .retrieve()
-                    .body(java.util.Map.class);
+                    .body(Map.class);
+            return result;
         } catch (Exception e) {
+            log.warn("Failed to register user {} ({}): {}", username, email, e.getMessage());
             return null;
         }
     }
@@ -82,6 +102,7 @@ public class UserValidationClient {
                     .retrieve()
                     .body(UserInfo.class);
         } catch (Exception e) {
+            log.warn("Failed to find user with query '{}': {}", trimmed, e.getMessage());
             return null;
         }
     }

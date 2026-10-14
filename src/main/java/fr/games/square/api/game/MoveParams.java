@@ -1,30 +1,36 @@
 package fr.games.square.api.game;
 
+import jakarta.validation.constraints.NotNull;
+
 public class MoveParams {
-    private int x;
-    private int y;
+
+    @NotNull(message = "La coordonnée x est requise")
+    private Integer x;
+
+    @NotNull(message = "La coordonnée y est requise")
+    private Integer y;
 
     public MoveParams() {
     }
 
-    public MoveParams(int x, int y) {
+    public MoveParams(Integer x, Integer y) {
         this.x = x;
         this.y = y;
     }
 
-    public int getX() {
+    public Integer getX() {
         return x;
     }
 
-    public void setX(int x) {
+    public void setX(Integer x) {
         this.x = x;
     }
 
-    public int getY() {
+    public Integer getY() {
         return y;
     }
 
-    public void setY(int y) {
+    public void setY(Integer y) {
         this.y = y;
     }
 }

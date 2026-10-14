@@ -9,12 +9,16 @@ import org.springframework.web.bind.annotation.RestController;
 @Tag(name = "Système", description = "Vérification de l'état de l'API")
 @RestController
 public class HeartbeatController {
-    @Autowired
-    private HeartbeatSensor heartbeatSensor;
+
+    private final HeartbeatSensor heartbeatSensor;
+
+    public HeartbeatController(HeartbeatSensor heartbeatSensor) {
+        this.heartbeatSensor = heartbeatSensor;
+    }
 
     @Operation(summary = "Vérifier la disponibilité du server")
     @GetMapping("/heartbeat")
     public int heartbeat() {
         return heartbeatSensor.get();
-    };
+    }
 }

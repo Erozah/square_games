@@ -2,14 +2,13 @@ package fr.games.square.api.heartbeat;
 
 import org.springframework.stereotype.Service;
 
-import java.util.Random;
+import java.util.concurrent.ThreadLocalRandom;
 
 @Service
 public class RandomHeartbeat implements HeartbeatSensor {
 
     @Override
     public int get() {
-        Random rand = new Random();
-        return (rand.nextInt(191) + 40);
+        return ThreadLocalRandom.current().nextInt(191) + 40;
     }
 }

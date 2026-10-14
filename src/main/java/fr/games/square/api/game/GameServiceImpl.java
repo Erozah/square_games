@@ -8,12 +8,27 @@ import fr.le_campus_numerique.square_games.engine.InvalidPositionException;
 import fr.le_campus_numerique.square_games.engine.Token;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.util.*;
 
 @Service
+@Transactional
 public class GameServiceImpl implements GameService {
+
+    public static final String LOCAL_PLAYER_PREFIX = "00000000-0000-0000-0000-";
+
+    public static boolean isLocalPlayer(UUID playerId) {
+        return playerId != null && playerId.toString().startsWith(LOCAL_PLAYER_PREFIX);
+    }
+
+    public static boolean isLocalGame(Game game) {
+        if (game == null || game.getPlayerIds() == null) {
+            return false;
+        }
+        return game.getPlayerIds().stream().anyMatch(GameServiceImpl::isLocalPlayer);
+    }
 
     private final GameDao gameDao;
     private final List<GamePlugin> gamePlugins;
@@ -43,8 +58,9 @@ public class GameServiceImpl implements GameService {
             int expectedPlayers = (params.getPlayerCount() != null && params.getPlayerCount() > 0)
                     ? params.getPlayerCount()
                     : 2;
+            int localIndex = 2;
             while (playerIds.size() < expectedPlayers) {
-                playerIds.add(UUID.randomUUID());
+                playerIds.add(UUID.fromString(String.format("00000000-0000-0000-0000-%012d", localIndex++)));
             }
             int boardSize = (params.getBoardSize() != null && params.getBoardSize() > 0)
                     ? params.getBoardSize()
@@ -57,6 +73,7 @@ public class GameServiceImpl implements GameService {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public Game getGame(UUID gameId) {
         if (gameId == null) {
             return null;
@@ -65,6 +82,7 @@ public class GameServiceImpl implements GameService {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public Collection<CellPosition> getAllowedMoves(UUID gameId) {
         Game game = getGame(gameId);
         if (game == null) {
@@ -92,12 +110,20 @@ public class GameServiceImpl implements GameService {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Partie introuvable");
         }
 
-        if (!userId.equals(game.getCurrentPlayerId())) {
+        boolean isLocal = isLocalGame(game);
+        if (!isLocal && !userId.equals(game.getCurrentPlayerId())) {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Ce n'est pas votre tour de jouer !");
         }
+        if (isLocal && !game.getPlayerIds().contains(userId)) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Vous ne participez pas à cette partie !");
+        }
         CellPosition targetPos = new CellPosition(params.getX(), params.getY());
-        if (game.getFactoryId() != null && game.getFactoryId().toLowerCase().contains("connect") && targetPos.y() >= 0) {
-            targetPos = new CellPosition(targetPos.x(), -1);
+        GamePlugin plugin = gamePlugins.stream()
+                .filter(p -> p.supports(game.getFactoryId()) || p.getId().equalsIgnoreCase(game.getFactoryId()))
+                .findFirst()
+                .orElse(null);
+        if (plugin != null) {
+            targetPos = plugin.transformMove(game, targetPos);
         }
 
         Token boardToken = game.getBoard().get(targetPos);
@@ -127,9 +153,11 @@ public class GameServiceImpl implements GameService {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public List<Game> getGamesForUser(UUID userId) {
-        return gameDao.findAll()
-                .filter(game -> game.getPlayerIds().contains(userId))
-                .toList();
+        if (userId == null) {
+            return Collections.emptyList();
+        }
+        return gameDao.findByPlayerId(userId).toList();
     }
 }

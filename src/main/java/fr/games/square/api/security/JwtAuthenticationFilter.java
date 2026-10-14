@@ -52,10 +52,20 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         if (jwtService.isTokenValid(token)) {
             UUID userId = jwtService.extractUserId(token);
             if (userId != null && SecurityContextHolder.getContext().getAuthentication() == null) {
+                String roles = jwtService.extractRoles(token);
+                java.util.List<org.springframework.security.core.authority.SimpleGrantedAuthority> authorities =
+                        (roles != null && !roles.isBlank())
+                                ? java.util.Arrays.stream(roles.split(","))
+                                        .map(String::trim)
+                                        .filter(s -> !s.isEmpty())
+                                        .map(org.springframework.security.core.authority.SimpleGrantedAuthority::new)
+                                        .toList()
+                                : java.util.Collections.emptyList();
+
                 UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(
                         userId,
                         null,
-                        Collections.emptyList()
+                        authorities
                 );
                 authToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
 
